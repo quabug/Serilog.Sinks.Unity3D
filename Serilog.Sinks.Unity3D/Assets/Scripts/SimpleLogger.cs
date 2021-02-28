@@ -3,6 +3,8 @@ using Serilog.Sinks.Unity3D;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Serilog.Context;
+using Serilog.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,14 +19,26 @@ public class SimpleLogger : MonoBehaviour
 
     private void Awake() =>
         _logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.Unity3D()
+            .MinimumLevel.Debug()
+            .Destructure.With<UnityObjectDestructuringPolicy>()
+            .Enrich.FromLogContext()
+            .Enrich.WithProperty(Constant.CATEGORY_NAME, "Project")
+            .Enrich.WithProperty(Constant.UNITY_OBJECT_PROPERTY, "Unknown")
+            .WriteTo.Unity3D(outputTemplate: "[{Level:u3}] {SourceContext}: <{__Object__}> {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
     private void Start()
     {
-        _infoButton.onClick.AddListener(() => _logger.Information("This is an info"));
-        _warningButton.onClick.AddListener(() => _logger.Warning("This is a warning"));
+        _infoButton.onClick.AddListener(() =>
+        {
+            using (UnityContext.PushObject(this))
+            {
+                _logger.Information("This is an info");
+            }
+        });
+
+        var testLogger = _logger.ForContext(Constant.CATEGORY_NAME, "Test");
+        _warningButton.onClick.AddListener(() => testLogger.Warning("This is a warning"));
         _errorButton.onClick.AddListener(() =>
         {
             try
@@ -43,7 +57,11 @@ public class SimpleLogger : MonoBehaviour
             ThreadPool.QueueUserWorkItem(state =>
             {
                 stopWatch.Stop();
-                _logger.Information("Log from thread {Id}, Invoke took: {Elapsed}", Thread.CurrentThread.ManagedThreadId, stopWatch.Elapsed);
+                using (UnityContext.PushObject(this))
+                {
+                    _logger.Information("Log from thread {Id}, Invoke took: {Elapsed}",
+                        Thread.CurrentThread.ManagedThreadId, stopWatch.Elapsed);
+                }
             });
         });
     }

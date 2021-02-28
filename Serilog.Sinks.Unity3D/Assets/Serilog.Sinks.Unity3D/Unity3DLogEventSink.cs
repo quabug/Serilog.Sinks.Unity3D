@@ -15,6 +15,15 @@ namespace Serilog.Sinks.Unity3D
 
         public void Emit(LogEvent logEvent)
         {
+            logEvent.Properties.TryGetValue(Constant.UNITY_OBJECT_PROPERTY, out var unityObjectProperty);
+            var unityObject = (unityObjectProperty as UnityObjectValue)?.Value;
+
+            if (logEvent.Exception != null)
+            {
+                Debug.LogException(logEvent.Exception, unityObject);
+                return;
+            }
+
             using (var buffer = new StringWriter())
             {
                 _formatter.Format(logEvent, buffer);
@@ -24,16 +33,16 @@ namespace Serilog.Sinks.Unity3D
                     case LogEventLevel.Verbose:
                     case LogEventLevel.Debug:
                     case LogEventLevel.Information:
-                        Debug.Log(buffer.ToString().Trim());
+                        Debug.Log(buffer.ToString().Trim(), unityObject);
                         break;
 
                     case LogEventLevel.Warning:
-                        Debug.LogWarning(buffer.ToString().Trim());
+                        Debug.LogWarning(buffer.ToString().Trim(), unityObject);
                         break;
 
                     case LogEventLevel.Error:
                     case LogEventLevel.Fatal:
-                        Debug.LogError(buffer.ToString().Trim());
+                        Debug.LogError(buffer.ToString().Trim(), unityObject);
                         break;
 
                     default: throw new ArgumentOutOfRangeException(nameof(logEvent.Level), "Unknown log level");
