@@ -63,7 +63,7 @@ namespace Serilog.Extensions.Logging
             set => _value.Value = value;
         }
 
-        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        private void EnrichScopeProperties(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
             List<LogEventPropertyValue> scopeItems = null;
             for (var scope = CurrentScope; scope != null; scope = scope.Parent)
@@ -155,28 +155,7 @@ namespace Serilog.Extensions.Logging
 
             var parsedTemplate = MessageTemplateParser.Parse(messageTemplate ?? "");
             var evt = new LogEvent(DateTimeOffset.Now, level, exception, parsedTemplate, properties);
-
-            var propertyfactory = new PropertyFactory(logger);
-            List<LogEventPropertyValue> scopeItems = null;
-            for (var scope = CurrentScope; scope != null; scope = scope.Parent)
-            {
-                LogEventPropertyValue scopeItem;
-                scope.EnrichAndCreateScopeItem(evt, propertyfactory, out scopeItem);
-
-                if (scopeItem != null)
-                {
-                    scopeItems = scopeItems ?? new List<LogEventPropertyValue>();
-                    scopeItems.Add(scopeItem);
-                }
-            }
-
-            if (scopeItems != null)
-            {
-                scopeItems.Reverse();
-                evt.AddPropertyIfAbsent(new LogEventProperty(ScopePropertyName, new SequenceValue(scopeItems)));
-            }
-
-
+            EnrichScopeProperties(evt, new PropertyFactory(logger));
             logger.Write(evt);
         }
 
