@@ -1,0 +1,5 @@
+{
+    "name": "com.quabug.serilog.extensions.logging",
+    "displayName": "Serilog.Extensions.Logging",
+    "version": "1.0.0"
+}
