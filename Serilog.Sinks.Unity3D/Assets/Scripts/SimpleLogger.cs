@@ -3,8 +3,6 @@ using Serilog.Sinks.Unity3D;
 using System;
 using System.Diagnostics;
 using System.Threading;
-using Serilog.Context;
-using Serilog.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,8 +21,7 @@ public class SimpleLogger : MonoBehaviour
             .Destructure.With<UnityObjectDestructuringPolicy>()
             .Enrich.FromLogContext()
             .Enrich.WithProperty(Constant.CATEGORY_NAME, "Project")
-            .Enrich.WithProperty(Constant.UNITY_OBJECT_PROPERTY, "Unknown")
-            .WriteTo.Unity3D(outputTemplate: "[{Level:u3}] {SourceContext}: <{__Object__}> {Message:lj}{NewLine}{Exception}")
+            .WriteTo.Unity3D(outputTemplate: "[{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
     private void Start()
